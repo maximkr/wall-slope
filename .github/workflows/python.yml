@@ -1,0 +1,44 @@
+name: Python
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+# Новый пуш в ту же ветку отменяет предыдущий незавершённый прогон
+concurrency:
+  group: python-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    name: Расчёт на тестовом датасете
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Syntax check
+        run: python -m py_compile wall.py
+
+      # Прогон на приложенном wall_points.csv: проверяет, что оптимизация
+      # сходится и скрипт отрабатывает целиком, а не падает на импортах.
+      - name: Run wall.py
+        run: python wall.py
