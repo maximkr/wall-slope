@@ -1,5 +1,7 @@
 # wall-slope
 
+[![Python](https://github.com/maximkr/wall-slope/actions/workflows/python.yml/badge.svg?branch=main)](https://github.com/maximkr/wall-slope/actions/workflows/python.yml?query=branch%3Amain)
+
 Расчёт плоскости штукатурных маяков по облаку точек, снятому с реальной стены тахеометром.
 
 Скрипт отвечает на практический вопрос ремонта: **куда выставить маяки на кривой стене**, чтобы выровнять её под правило с минимальным расходом смеси и при этом удержать стену в отвесе.
