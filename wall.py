@@ -1,19 +1,15 @@
-﻿# filename: wall_analysis_correct_axes.py
-# execution: true
+﻿# Расчет плоскости штукатурных маяков по облаку точек с тахеометра.
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from scipy.optimize import minimize
-from sklearn.linear_model import LinearRegression
 import math
 
 # Параметры
-MAYAK_THICKNESS = 0.008  # толщина маяка в метрах (6 мм)
+MAYAK_THICKNESS = 0.008  # толщина маяка в метрах (8 мм)
 MAX_VERTICAL_ANGLE = 2.0  # максимальный наклон по вертикали в градусах
 MAX_NEGATIVE_DEPTH = 0.015  # максимальное заглубление в метрах (15 мм)
-ALLOWED_NEGATIVE_POINTS_RATIO = 0  # доля точек с отрицательным расстоянием (50%)
+ALLOWED_NEGATIVE_POINTS_RATIO = 0  # допустимая доля точек с заглублением (0%)
 
 # Читаем данные из CSV
 df = pd.read_csv('wall_points.csv')
@@ -37,7 +33,7 @@ def objective_function(params):
     positive_distances = np.maximum(0, distances)
     base_cost = np.sum(positive_distances)
 
-    # Штраф за наклон по вертикали более 3 градусов
+    # Штраф за наклон по вертикали более MAX_VERTICAL_ANGLE градусов
     vertical_angle = math.degrees(math.atan(abs(b)))
     angle_penalty = 100000.0 * max(0, vertical_angle - MAX_VERTICAL_ANGLE)**2
 
@@ -46,7 +42,7 @@ def objective_function(params):
     max_negative_points = int(len(distances) * ALLOWED_NEGATIVE_POINTS_RATIO)
     negative_count_penalty = 100000.0 * max(0, negative_points - max_negative_points)
 
-    # Штраф за заглубление более 5 мм
+    # Штраф за заглубление более MAX_NEGATIVE_DEPTH метров
     too_deep_penalty = 100000.0 * np.sum(np.maximum(0, -(distances + MAX_NEGATIVE_DEPTH)))
 
     # Штраф за толщину меньше маяка для положительных точек
@@ -73,6 +69,11 @@ wall_area = wall_width * wall_height
 angle_x = math.degrees(math.atan(abs(a)))
 angle_z = math.degrees(math.atan(abs(b)))
 
+# Объем штукатурки: средняя толщина слоя, умноженная на площадь стены.
+# Оценка корректна, если точки замера распределены по стене более-менее равномерно.
+mean_thickness = np.mean(distances)
+plaster_volume = mean_thickness * wall_area
+
 # Создаем словарь с результатами
 stats = {
     "Параметры стены": {
@@ -88,9 +89,9 @@ stats = {
     },
     "Параметры штукатурки": {
         "Минимальная толщина": f"{np.min(distances)*1000:.1f} мм",
-        "Средняя толщина": f"{np.mean(distances)*1000:.1f} мм",
+        "Средняя толщина": f"{mean_thickness*1000:.1f} мм",
         "Максимальная толщина": f"{np.max(distances)*1000:.1f} мм",
-        "Общий объем штукатурки": f"{np.sum(distances):.3f} м³",
+        "Общий объем штукатурки": f"{plaster_volume:.3f} м³",
     }
 }
 
